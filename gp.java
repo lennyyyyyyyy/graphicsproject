@@ -44,7 +44,6 @@ class Frame extends JFrame
     }
 	private class ExitListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			//System.out.println("Exit");
 			System.exit(0);
 		}
 	}
@@ -57,28 +56,27 @@ class Game extends JPanel {
     static int CARDWIDTH = 200, CARDHEIGHT = 380, CARDSPACING = 10;
     static int AIRWIDTH = 20, AIRSRADIUS = 26, PLAYERAIRSRADIUS = 50;
     static double RADIUSFLUX = 0.25;
-    static int PASSTURNWIDTH = 250, UPDATEAIRTIME = 5, MOVETOADSTIME = 3, GENERATEAIRTIME = 3, APPLYACTIONCARDSTIME = 2;
+    static int PASSTURNWIDTH = 200, UPDATEAIRTIME = 5, MOVETOADSTIME = 3, GENERATEAIRTIME = 3, APPLYACTIONCARDSTIME = 2;
 
     Card cards[] = new Card[] {new Card("cat", "domain"),
-                            // new Card("dog", "domain"),
-                            // new Card("crab", "domain"),
-                            // new Card("toad", "domain"),
-                            // new Card("plant", "domain"),
-                            // new Card("clam", "domain"),
-                            // new Card("worm", "domain"),
-                            // new Card("rat", "domain"),
-                            // new Card("mouse", "domain"),
+                            new Card("dog", "domain"),
+                            new Card("crab", "domain"),
+                            new Card("toad", "domain"),
+                            new Card("plant", "domain"),
+                            new Card("clam", "domain"),
+                            new Card("worm", "domain"),
+                            new Card("rat", "domain"),
+                            new Card("mouse", "domain"),
                             new Card("mole", "domain"),
-                            // new Card("snake", "domain"),
-                            // new Card("blank", "domain"),
-                            // new Card("suffocation", "any"),
-                            // new Card("max", "any"),
-                            // new Card("evan", "any"),
-                            // new Card("sendback", "card"),
-                            // new Card("block", "card")
+                            new Card("snake", "domain"),
+                            new Card("blank", "domain"),
+                            new Card("suffocation", "any"),
+                            new Card("max", "any"),
+                            new Card("evan", "any"),
+                            new Card("sendback", "card"),
+                            new Card("block", "card")
                             };
 
-    // String[] cards = new String[]{"cat", "dog", "crab", "toad", "suffocation", "plant", "clam", "worm", "rat", "mouse", "mole", "snake"};
     static HashMap<String, int[][]> moves = new HashMap<String, int[][]>();
     static {
         moves.put("cat", new int[][] {{0,0,-1,0}, {1,0,0,0}});
@@ -110,15 +108,23 @@ class Game extends JPanel {
     }
 
     Space[][] board = new Space[4][4];
+    DiscardSpace ds = new DiscardSpace();
     Font font; 
     JLabel choiceLabel = new JLabel();
-    Clip playerAmbient = assignSound("playerAmbient.wav", 0), enemyAmbient = assignSound("enemyAmbient.wav", 0);
-    Clip playerBreathing = assignSound("playerBreathing.wav", 1), enemyBreathing = assignSound("enemyBreathing.wav", -6);
     ArrayList<Card> playerHand = new ArrayList<Card>(), enemyHand = new ArrayList<Card>(), cardChoices = new ArrayList<Card>(), toBeAdded = new ArrayList<Card>();
     Card playerHolding, enemyHolding;
     ArrayList<Air> playerAirs = new ArrayList<Air>(), enemyAirs = new ArrayList<Air>();
+
+    // sound
+    Clip playerAmbient = assignSound("playerAmbient.wav", 0), enemyAmbient = assignSound("enemyAmbient.wav", 0);
+    Clip playerBreathing = assignSound("playerBreathing.wav", 1), enemyBreathing = assignSound("enemyBreathing.wav", -6);
+    // camera shake
+    double csx = 0, csy = 0, cstheta = 0;
+    // blink
+    double blink = 0;
+    boolean blinkToggle = false;
     // possible states
-    int STARTSCREEN = 0, PLAYERWINSCREEN = 6, ENEMYWINSCREEN = 7;
+    int STARTSCREEN = 0, STARTSCREEN2 = -1, PLAYERWINSCREEN = 6, ENEMYWINSCREEN = 7;
     int PLAYERROLL = 8, PLAYERPICK = 1, PLAYERPLACE = 2, PLAYERVIEW = 10, ENEMYROLL = 9, ENEMYPICK = 3, ENEMYPLACE = 4, ENEMYVIEW = 11;
     int SWITCH = 12, UPDATEBOARD = 13, PLAYERWIN = 14, ENEMYWIN = 15, PLAYERHIDE = 16, ENEMYHIDE = 17;
 
@@ -131,23 +137,46 @@ class Game extends JPanel {
         for (MouseListener ml : getMouseListeners()) {
             removeMouseListener(ml);
         }
+        if (blinkToggle) {
+            blink += (1 - blink) * 0.15;
+            if (1 - blink < 0.001) {
+                blink = 1;
+                blinkToggle = false;
+            }
+        } else {
+            blink -= blink * 0.15;
+            if (blink < 0.001) {
+                blink = 0;
+            }
+            if (Math.random() < 0.002) {
+                blinkToggle = true;
+            }
+        }
         super.paintComponent(g);
         if (gameState == STARTSCREEN) {
-            Image background = new Image("start.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new StaticBackground("start.png");
             background.draw(g);
             Image startButton = new StartButton();
             startButton.draw(g);
+        } else if (gameState == STARTSCREEN2) {
+            Image background = new StaticBackground("start2.png");
+            background.draw(g);
         } else if (gameState == PLAYERROLL) {
-            Image background = new Image("playerpick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("playerpick.png");
             background.draw(g);
             displayChoices(g, playerHand, PLAYERHIDE, PLAYERPICK);
-            
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);  
+            drawBlink(g);      
         } else if (gameState == PLAYERHIDE) {
-            Image background = new Image("playerpick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("playerpick.png");
             background.draw(g);
             hideChoices(g, playerHand);
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == PLAYERPICK || gameState == PLAYERVIEW) {
-            Image background = new Image("playerpick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("playerpick.png");
             background.draw(g);
             if (gameState == PLAYERPICK) {
                 displayHand(g, playerHand, true);
@@ -156,27 +185,42 @@ class Game extends JPanel {
             }
             if (gameState == PLAYERVIEW) {
                 PassTurn pt = new PassTurn();
+                pt.draw(g);
             }
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == PLAYERPLACE) {
-            Image background = new Image("playerboard.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("playerboard.png");
             background.draw(g);
             displayBoard(g, 0.6);
             if (playerHolding != null) {
                 playerHolding.lower(0);
+                applyCameraShake(g, 0.3);
                 playerHolding.drawHolding(g);
+                revertCameraShake(g, 0.3);
             }
             ExitPlace e = new ExitPlace();
+            e.draw(g);
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == ENEMYROLL) {
-            Image background = new Image("enemypick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("enemypick.png");
             background.draw(g);
             displayChoices(g, enemyHand, ENEMYHIDE, ENEMYPICK);
-            
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == ENEMYHIDE) {
-            Image background = new Image("enemypick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("enemypick.png");
             background.draw(g);
             hideChoices(g, enemyHand);
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == ENEMYPICK || gameState == ENEMYVIEW) {
-            Image background = new Image("enemypick.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new MovingBackground("enemypick.png");
             background.draw(g);
             if (gameState == ENEMYPICK) {
                 displayHand(g, enemyHand, true);
@@ -185,34 +229,42 @@ class Game extends JPanel {
             }
             if (gameState == ENEMYVIEW) {
                 PassTurn pt = new PassTurn();
+                pt.draw(g);
             }
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == ENEMYPLACE) {
-            Image background = new Image("enemyboard.png", Frame.WIDTH, Frame.HEIGHT);
-            background.draw(g);
             ((Graphics2D)g).rotate(Math.PI, Frame.WIDTH/2, Frame.HEIGHT/2); // board has to be flipped
+            Image background = new MovingBackground("enemyboard.png");
+            background.draw(g);
             displayBoard(g, 0.6);
             ((Graphics2D)g).rotate(Math.PI, Frame.WIDTH/2, Frame.HEIGHT/2);
             if (enemyHolding != null) {
                 enemyHolding.lower(0);
+                applyCameraShake(g, -0.3);
                 enemyHolding.drawHolding(g);
+                revertCameraShake(g, -0.3);
             }
             ExitPlace e = new ExitPlace();
+            e.draw(g);
+            Image vignette = new StaticBackground("vignette.png");
+            vignette.draw(g);
+            drawBlink(g);
         } else if (gameState == UPDATEBOARD) {
             ((Graphics2D)g).rotate(-1*Math.PI/2, Frame.WIDTH/2, Frame.HEIGHT/2); // tilt board sideways
-            Image background1 = new Image("enemyboard.png", Frame.WIDTH, Frame.HEIGHT);
-            background1.draw(g);
-            Image background2 = new Image("playerboard.png",0, Frame.HEIGHT/2, Frame.WIDTH, Frame.HEIGHT);
-            background2.draw(g);
+            Image background = new MovingBackground("combinedboard.png");
+            background.draw(g);
             displayBoard(g, 0.012);
             ((Graphics2D)g).rotate(Math.PI/2, Frame.WIDTH/2, Frame.HEIGHT/2);
         } else if (gameState == SWITCH) {
-            Image background = new Image("black.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new StaticBackground("black.png");
             background.draw(g);
         } else if (gameState == PLAYERWIN) {
-            Image background = new Image("fillerred.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new StaticBackground("fillerred.png");
             background.draw(g);
         } else if (gameState == ENEMYWIN) {
-            Image background = new Image("fillerblue.png", Frame.WIDTH, Frame.HEIGHT);
+            Image background = new StaticBackground("fillerblue.png");
             background.draw(g);
         }    
     }
@@ -225,7 +277,7 @@ class Game extends JPanel {
         } catch (Exception e) {}
         for (JLabel jl : labels.values()) { // adjust label settings for every card
             jl.setFont(font);
-            jl.setForeground(new Color(65, 105, 225));
+            
             jl.setText("<html><div style=\"text-align: center;\">" + jl.getText() + "</div></html>");
             jl.setVisible(false);
             add(jl);
@@ -249,7 +301,10 @@ class Game extends JPanel {
         }
 
         while (true) {
-
+            // update camera shake
+            cstheta += Math.PI/60;
+            csx = (Frame.WIDTH * Math.cos(cstheta/1.44) / 20);
+            csy = (Frame.HEIGHT * Math.sin(cstheta/3.21) / 10);
             // update mouse locations
             mouseX = (int) (MouseInfo.getPointerInfo().getLocation().getX() - Frame.self.getLocation().getX());
             mouseY = (int) (MouseInfo.getPointerInfo().getLocation().getY() - Frame.self.getLocation().getY() + Frame.self.getContentPane().getSize().getHeight() - Frame.HEIGHT);
@@ -275,6 +330,7 @@ class Game extends JPanel {
         playSound("carddeal.wav", 0, -1);
     }
     public void displayChoices(Graphics g, ArrayList<Card> hand, int hidestate, int pickstate) {
+        applyCameraShake(g, 0.2);
         for (int i=0; i<cardChoices.size(); i++) {
             int slot = i + toBeAdded.size();
             if (cardChoices.get(i).inside()) {
@@ -291,6 +347,7 @@ class Game extends JPanel {
             toBeAdded.get(i).flip(0, 0.2);
             toBeAdded.get(i).draw(g);
         }
+        revertCameraShake(g, 0.2);
         choiceLabel.setVisible(true);
         choiceLabel.setText("<html><div style=\"text-align: center;\">Choose " + (3-hand.size()) + " card"+(hand.size()==2?"":"s")+".</div></html>");
         if (hand.size() == 3) { // when hand is full move on to playing
@@ -322,6 +379,7 @@ class Game extends JPanel {
         }
     }
     public void displayHand(Graphics g, ArrayList<Card> hand, boolean pick) {
+        applyCameraShake(g, 0.3);
         for (int i=0; i<hand.size(); i++) {
             if (hand.get(i).inside() && pick) { // hovering
                 hand.get(i).raise(i);
@@ -333,22 +391,26 @@ class Game extends JPanel {
                 hand.get(i).setListener();
             }
         }
+        revertCameraShake(g, 0.3);
     }
     public void displayBoard(Graphics g, double power) {
         Image boardArea = new Image("board.png", Frame.WIDTH/2 - 2*SPACEWIDTH, Frame.HEIGHT/2 - 2*SPACEHEIGHT, 4*SPACEWIDTH, 4*SPACEHEIGHT);
-        boardArea.draw(g);
+        boardArea.drawCameraShake(g, 0.1);
         for (Space[] r : board) {
             for (Space s : r) {
                 s.draw(g, power);
                 s.setListener();
             }
         }
+        ds.draw(g);
+        ds.setListener();
         angle += 3.14/60;
         int dist = (int)((1+RADIUSFLUX)*PLAYERAIRSRADIUS + AIRWIDTH);
         displayAirs(g, playerAirs, PLAYERAIRSRADIUS, angle, Frame.WIDTH - dist, Frame.HEIGHT - dist, power);
         displayAirs(g, enemyAirs, PLAYERAIRSRADIUS, angle, dist, dist, power);
     }
     public void displayAirs(Graphics g, ArrayList<Air> airs, double radius, double theta, int centerx, int centery, double power) {
+        applyCameraShake(g, 0.2);
         for (int i=0; i<airs.size(); i++) {
             double airAngle = theta + (2*Math.PI*i/airs.size());
             // sinewave radius
@@ -357,6 +419,7 @@ class Game extends JPanel {
             airs.get(i).draw(g);
             ((Graphics2D) g).rotate(-1*airAngle, centerx, centery);
         }
+        revertCameraShake(g, 0.2);
     }
     public <T> void shuffle(T[] array) {
         // shuffle moves
@@ -471,6 +534,10 @@ class Game extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+
+        if (validMoves.size() != 0) {
+            playSound("wind.wav", 0, -2);
+        }
     }
     public void moveToads() {
         Set<Card> movedToads = new HashSet<Card>();
@@ -506,6 +573,10 @@ class Game extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+
+        if (hadToad) {
+            playSound("croak.wav", 0, -3);
+        }
     }
     public void generateAir() {
         boolean hadPlant = false;
@@ -599,18 +670,18 @@ class Game extends JPanel {
         timer.setRepeats(false);
         timer.start();
     }
-    public Clip assignSound(String url, double gain) {
+    public Clip assignSound(String src, double gain) {
         try {
             Clip clip = AudioSystem.getClip();
-            AudioInputStream inputStream = AudioSystem.getAudioInputStream(getClass().getResourceAsStream(url));
+            AudioInputStream inputStream = AudioSystem.getAudioInputStream(getClass().getResourceAsStream(src));
             clip.open(inputStream);
             ((FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN)).setValue((float)gain);
             return clip;
         } catch (Exception e) {}
         return null;
     }
-    public void playSound(String url, double delay, double gain) {
-        Clip clip = assignSound(url, gain);
+    public void playSound(String src, double delay, double gain) {
+        Clip clip = assignSound(src, gain);
         javax.swing.Timer timer = new javax.swing.Timer((int)(delay*1000), new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 clip.start();
@@ -618,6 +689,25 @@ class Game extends JPanel {
         });
         timer.setRepeats(false);
         timer.start();
+    }
+    public void applyCameraShake(Graphics g, double power) {
+        g.translate((int)(csx*power), (int)(csy*power));
+    }
+    public void revertCameraShake(Graphics g, double power) {
+        g.translate(-1 * (int)(csx*power), -1 * (int)(csy*power));
+    }
+    public void drawHalfBlink(Graphics g) {
+        AffineTransform at = ((Graphics2D)g).getTransform();
+        ((Graphics2D)g).scale(1, blink);
+        Image b = new Image("blink.png", Frame.WIDTH, Frame.HEIGHT/2);
+        b.draw(g);
+        ((Graphics2D)g).setTransform(at);
+    }
+    public void drawBlink(Graphics g) {
+        drawHalfBlink(g);
+        ((Graphics2D)g).rotate(Math.PI, Frame.WIDTH/2, Frame.HEIGHT/2);
+        drawHalfBlink(g);
+        ((Graphics2D)g).rotate(Math.PI, Frame.WIDTH/2, Frame.HEIGHT/2);
     }
     private class Box {
         int x, y, width, height;
@@ -653,6 +743,28 @@ class Game extends JPanel {
         public void draw(Graphics g) {
             g.drawImage(img.getImage(), x, y, width, height, Frame.self);
         }
+        public void drawCameraShake(Graphics g, double power) {
+            applyCameraShake(g, power);
+            draw(g);
+            revertCameraShake(g, power);
+        }
+    }
+
+    private class StaticBackground extends Image {
+        public StaticBackground(String src) {
+            super(src, Frame.WIDTH, Frame.HEIGHT);
+        }
+    }
+
+    private class MovingBackground extends Image {
+        public MovingBackground(String src) {
+            super(src, -1*Frame.WIDTH/30, -1*Frame.HEIGHT/30, Frame.WIDTH*16/15, Frame.HEIGHT*16/15);
+        }
+        public void draw(Graphics g) {
+            applyCameraShake(g, 0.1);
+            super.draw(g);
+            revertCameraShake(g, 0.1);
+        }
     }
 
     private class StartButton extends Image {
@@ -661,9 +773,16 @@ class Game extends JPanel {
             addMouseListener(new MouseAdapter() { // listens to press the button
                 public void mousePressed(MouseEvent e) {
                     if (inside()) {
-                        gameState = PLAYERROLL; 
-                        fillChoices("player");
+                        gameState = STARTSCREEN2;
                         playerBreathing.loop(-1);
+                        javax.swing.Timer timer = new javax.swing.Timer(2000, new ActionListener() {
+                            public void actionPerformed(ActionEvent e) {
+                                gameState = PLAYERROLL; 
+                                fillChoices("player");
+                            }
+                        });
+                        timer.setRepeats(false);
+                        timer.start();
                     }
                 } 
             });
@@ -825,8 +944,16 @@ class Game extends JPanel {
         public void drawHolding(Graphics g) {
             JLabel jl = labels.get(type);
             if (inside()) {
-                jl.setBounds(x + 5, y + 5, width - 10, height - 10);
+                int reverse = (owner == "player"?1:-1); // reverse camera shake if enemy
+                jl.setBounds(x + 5 + reverse*(int)(csx * 0.3), y + 5 + reverse*(int)(csy * 0.3), width - 10, height - 10);
                 jl.setVisible(true);
+                if (canPlace == "domain") {
+                    jl.setForeground(new Color(65, 105, 225)); // blue
+                } else if (canPlace == "card") {
+                    jl.setForeground(new Color(123, 3, 11)); // red
+                } else if (canPlace == "any") {
+                    jl.setForeground(Color.WHITE);
+                }
                 g.setColor(Color.BLACK);
                 g.fillRect(x, y, width, height);
             } else {
@@ -930,7 +1057,6 @@ class Game extends JPanel {
             actionCards.add(card);
         }
         public void assignModifier(Card card) {
-            
             card.y = y + SPACEPADDING + SPACEHEIGHT/2;
             card.width = SPACEWIDTH/2 - SPACEPADDING;
             card.height = SPACEHEIGHT/2 - SPACEPADDING;
@@ -951,15 +1077,35 @@ class Game extends JPanel {
             }
         }
         public void draw(Graphics g, double power) {
+            applyCameraShake(g, 0.1);
             drawCardOnBoard(c, g);
             //display action cards
             for (Card ac : actionCards) {
                 drawCardOnBoard(ac, g);
             }
+
+            if (valid() && inside()) {
+                g.setColor(new Color(255, 255, 255, 25));
+                g.fillRect(x, y, width, height);
+            }
+            revertCameraShake(g, 0.1);
+
             //display airs
             theta += speed; //rotate airs
             displayAirs(g, airs, AIRSRADIUS, theta, x + width/2, y+height/2, power);
             
+        }
+        public boolean valid() {
+            Card holding = null;
+            if (gameState == PLAYERPLACE) {
+                holding = playerHolding;
+            } else if (gameState == ENEMYPLACE) {
+                holding = enemyHolding;
+            }
+            return holding != null && (holding.canPlace == "any" || 
+                    (holding.canPlace == "domain" && 
+                            ((gameState == PLAYERPLACE && row < 2) || (gameState == ENEMYPLACE && row > 1))) ||
+                    (holding.canPlace == "card" && c != null));
         }
         public void setListener() {
             addMouseListener(new MouseAdapter() {
@@ -974,23 +1120,17 @@ class Game extends JPanel {
                             hand = enemyHand;
                             holding = enemyHolding;
                         }
-                        if (holding != null) {
-                            boolean valid = (holding.canPlace == "any" || 
-                                            (holding.canPlace == "domain" && 
-                                                    ((gameState == PLAYERPLACE && row < 2) || (gameState == ENEMYPLACE && row > 1))) ||
-                                            (holding.canPlace == "card" && c != null));
-                            if (valid) {
-                                if (holding.canPlace == "any") {
-                                    assignActionCard(holding);
-                                } else if (holding.canPlace == "card") {
-                                    assignModifier(holding);
-                                } else {
-                                    assignCard(holding);
-                                    playSound("cardplace.wav", 0, 6);
-                                }
-                                hand.remove(hand.indexOf(holding));
-                                holding = null;
+                        if (valid()) {
+                            if (holding.canPlace == "any") {
+                                assignActionCard(holding);
+                            } else if (holding.canPlace == "card") {
+                                assignModifier(holding);
+                            } else {
+                                assignCard(holding);
+                                playSound("cardplace.wav", 0, 6);
                             }
+                            hand.remove(hand.indexOf(holding));
+                            holding = null;
                         }
                         if (gameState == PLAYERPLACE) {
                             playerHolding = holding;
@@ -998,6 +1138,49 @@ class Game extends JPanel {
                             enemyHolding = holding;
                         }
                     }
+                }
+            });
+        }
+    }
+
+    private class DiscardSpace extends Image {
+        ArrayList<Card> pile = new ArrayList<Card>();
+        public DiscardSpace() {
+            super("discard.png", Frame.WIDTH/2 + SPACEWIDTH*2, Frame.HEIGHT/2 - SPACEHEIGHT/2, SPACEWIDTH, SPACEHEIGHT);
+        }
+        public void draw(Graphics g) {
+            applyCameraShake(g, 0.1);
+            super.draw(g);
+            for (int i=1; i>=0; i--) {
+                if (pile.size() >= i+1) {
+                    Card c = pile.get(i);
+                    c.update(x + SPACEPADDING, y + SPACEPADDING, 0.5);
+                    c.updateSize(SPACEWIDTH - 2*SPACEPADDING, SPACEHEIGHT - 2*SPACEPADDING, 0.5);
+                    c.flip(1, 0.2);
+                    c.draw(g);
+                }
+            }
+            if (((gameState == PLAYERPLACE && playerHolding != null) || 
+                (gameState == ENEMYPLACE && enemyHolding != null)) && inside()) {
+                g.setColor(new Color(255, 255, 255, 25));
+                g.fillRect(x, y, width, height);
+            }
+            revertCameraShake(g, 0.1);
+        }
+        public void setListener() {
+            addMouseListener(new MouseAdapter() {
+                public void mousePressed(MouseEvent e) {
+                    if (inside()) {
+                        if (gameState == PLAYERPLACE && playerHolding != null) {
+                            pile.add(0, playerHolding);
+                            playerHand.remove(playerHand.indexOf(playerHolding));
+                            playerHolding = null;
+                        } else if (gameState == ENEMYPLACE && enemyHolding != null) {
+                            pile.add(0, enemyHolding);
+                            enemyHand.remove(enemyHand.indexOf(enemyHolding));
+                            enemyHolding = null;
+                        }
+                    }   
                 }
             });
         }
