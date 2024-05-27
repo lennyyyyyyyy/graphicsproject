@@ -16,11 +16,12 @@ class MAIN
 class Frame extends JFrame
 {
     public static Frame self;
-	public static int WIDTH = 900, HEIGHT = 900;
+	public static int WIDTH = 800, HEIGHT = 800;
     Game g;
 	public Frame() {
         self = this;
-		setSize(WIDTH,HEIGHT);
+        getContentPane().setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        pack();
         setResizable(false);
 			
 		//MENU
@@ -51,32 +52,32 @@ class Frame extends JFrame
 
 class Game extends JPanel {
     // static vars
-    static int STARTBUTTONWIDTH = 152, STARTBUTTONHEIGHT = 60, INSTRUCTIONBUTTONWIDTH = 100;
-    static int SPACEWIDTH = 110, SPACEHEIGHT = 165, SPACEPADDING = 3;
-    static int CARDWIDTH = 200, CARDHEIGHT = 380, CARDSPACING = 10;
-    static int AIRWIDTH = 20, AIRSRADIUS = 26, PLAYERAIRSRADIUS = 50;
+    static int STARTBUTTONWIDTH = 135, STARTBUTTONHEIGHT = 53, INSTRUCTIONBUTTONWIDTH = 89;
+    static int SPACEWIDTH = 98, SPACEHEIGHT = 147, SPACEPADDING = 3;
+    static int CARDWIDTH = 178, CARDHEIGHT = 338, CARDSPACING = 9;
+    static int AIRWIDTH = 18, AIRSRADIUS = 23, PLAYERAIRSRADIUS = 44;
     static double RADIUSFLUX = 0.25;
-    static int PASSTURNWIDTH = 200, UPDATEAIRTIME = 5, MOVETOADSTIME = 3, GENERATEAIRTIME = 3, APPLYACTIONCARDSTIME = 2;
+    static int UPDATEAIRTIME = 5, MOVETOADSTIME = 3, GENERATEAIRTIME = 3, APPLYACTIONCARDSTIME = 2;
 
     Card cards[] = new Card[] {
-                            // new Card("dog", "domain"),
-                            // new Card("cat", "domain"),
-                            // new Card("worm", "domain"),
-                            // new Card("mole", "domain"),
-                            // new Card("rat", "domain"),
-                            // new Card("mouse", "domain"),
+                            new Card("dog", "domain"),
+                            new Card("cat", "domain"),
+                            new Card("worm", "domain"),
+                            new Card("mole", "domain"),
+                            new Card("rat", "domain"),
+                            new Card("mouse", "domain"),
                             new Card("clam", "domain"),
-                            // new Card("stump", "domain"),
-                            // new Card("crab", "domain"),
+                            new Card("stump", "domain"),
+                            new Card("crab", "domain"),
                             new Card("snake", "domain"),
-                            // new Card("plant", "domain"),
-                            // new Card("toad", "domain"),
-                            // new Card("blank", "domain"),
-                            // new Card("suffocation", "any"),
-                            // new Card("max", "any"), 
-                            // new Card("evan", "any"),
-                            // new Card("sendback", "card"),
-                            // new Card("block", "card")
+                            new Card("plant", "domain"),
+                            new Card("toad", "domain"),
+                            new Card("blank", "domain"),
+                            new Card("suffocation", "any"),
+                            new Card("max", "any"), 
+                            new Card("evan", "any"),
+                            new Card("sendback", "card"),
+                            new Card("block", "card")
                             };
     ArrayList<BlankChoiceCard> blankCards = new ArrayList<BlankChoiceCard>();
 
@@ -322,7 +323,8 @@ class Game extends JPanel {
             csy = (Frame.HEIGHT * Math.sin(cstheta/3.21) / 10);
             // update mouse locations
             mouseX = (int) (MouseInfo.getPointerInfo().getLocation().getX() - Frame.self.getLocation().getX());
-            mouseY = (int) (MouseInfo.getPointerInfo().getLocation().getY() - Frame.self.getLocation().getY() + Frame.self.getContentPane().getSize().getHeight() - Frame.HEIGHT);
+            mouseY = (int) (MouseInfo.getPointerInfo().getLocation().getY() - Frame.self.getLocation().getY() - Frame.self.getSize().height + Frame.HEIGHT);
+            System.out.println(mouseX + " " + mouseY);
             repaint();
             // System.out.println("x: " + mouseX + ", y: " + mouseY);
             // System.out.println(gameState);
