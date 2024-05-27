@@ -324,7 +324,6 @@ class Game extends JPanel {
             // update mouse locations
             mouseX = (int) (MouseInfo.getPointerInfo().getLocation().getX() - Frame.self.getLocation().getX());
             mouseY = (int) (MouseInfo.getPointerInfo().getLocation().getY() - Frame.self.getLocation().getY() - Frame.self.getSize().height + Frame.HEIGHT);
-            System.out.println(mouseX + " " + mouseY);
             repaint();
             // System.out.println("x: " + mouseX + ", y: " + mouseY);
             // System.out.println(gameState);
@@ -619,8 +618,6 @@ class Game extends JPanel {
                 toad.c.toadStopped = true;
             }
             board[toad.row+add][toad.col].assignCard(toad.c);
-            System.out.println(toad.row+add);
-            System.out.println(toad.col);
 
             toad.c = null;
         }
@@ -677,7 +674,6 @@ class Game extends JPanel {
                         }
                         for (int j=0; j<4; j++) {
                             for (int k=0; k<4; k++) {
-                                System.out.println(j + ", " + k);
                                 if (board[j][k].c != null) {
                                     board[j][k].c.owner = board[j][k].c.owner == "player" ? "enemy" : "player"; // switch owners
                                 }
@@ -716,7 +712,6 @@ class Game extends JPanel {
             for (int x : new int[]{(int)Math.floor(X), (int)Math.ceil(X)}) {
                 for (int y : new int[]{(int)Math.floor(Y), (int)Math.ceil(Y)}) {
                     if (!(x == move[0] && y == move[1]) && !(x == move[2] && y == move[3]) && board[y][x].c != null && board[y][x].c.type == "clam" && board[y][x].c.owner != c.owner) {
-                        System.out.println(x+" "+y);
                         ans = true;
                     }
                 }
@@ -965,13 +960,13 @@ class Game extends JPanel {
             return mouseX >= x && mouseX <= x+width && mouseY >= y && mouseY <= y+2*height; // card collider is two times taller
         }
         public void hide(int slot) {
-            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT, 0.2);
+            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT + 20, 0.2);
         }
         public void raise(int slot) {
-            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT - 3*height/2 - 20, 0.3);
+            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT - 3*height/2, 0.3);
         }
         public void lower(int slot) {
-            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT - height - 20, 0.3);
+            update((slot+1)*CARDSPACING + slot*width, Frame.HEIGHT - height, 0.3);
         }
         public void drawFaceup(Graphics g) {
             super.draw(g);
@@ -1097,10 +1092,10 @@ class Game extends JPanel {
             super.hide(slot%6);
         }
         public void raise() {
-            update((slot%6+1)*CARDSPACING + (slot%6)*width, Frame.HEIGHT - 3*height/2 - 20 - (1-(slot/6))*height/2, 0.3);
+            update((slot%6+1)*CARDSPACING + (slot%6)*width, Frame.HEIGHT - 3*height/2 - (1-(slot/6))*height/2, 0.3);
         }
         public void lower() {
-            update((slot%6+1)*CARDSPACING + (slot%6)*width, Frame.HEIGHT - height - 20 - (1-(slot/6))*height/2, 0.3);
+            update((slot%6+1)*CARDSPACING + (slot%6)*width, Frame.HEIGHT - height - (1-(slot/6))*height/2, 0.3);
         }
         public boolean inside() {
             if (slot/6 == 0) { // top row
@@ -1119,10 +1114,10 @@ class Game extends JPanel {
             update(Frame.WIDTH - CARDWIDTH, Frame.HEIGHT, 0.2);
         }
         public void raise() {
-            update(Frame.WIDTH - CARDWIDTH, Frame.HEIGHT - 3*height/2 - 20, 0.3);
+            update(Frame.WIDTH - CARDWIDTH, Frame.HEIGHT - 3*height/2, 0.3);
         }
         public void lower() {
-            update(Frame.WIDTH - CARDWIDTH, Frame.HEIGHT - height - 20, 0.3);
+            update(Frame.WIDTH - CARDWIDTH, Frame.HEIGHT - height, 0.3);
         }
         public void draw(Graphics g) {
             // depending on game state skip card looks different
@@ -1321,6 +1316,19 @@ class Game extends JPanel {
         public DiscardSpace() {
             super("discard.png", Frame.WIDTH/2 + SPACEWIDTH*2, Frame.HEIGHT/2 - SPACEHEIGHT/2, SPACEWIDTH, SPACEHEIGHT);
         }
+        public boolean inside() {
+            boolean ans;
+            if (gameState == ENEMYPLACE) { // enemy place the board is flipped, so mouse position is interpreted flipped
+                mouseX = Frame.WIDTH - mouseX;
+                mouseY = Frame.HEIGHT - mouseY;
+            }
+            ans = super.inside();
+            if (gameState == ENEMYPLACE) {
+                mouseX = Frame.WIDTH - mouseX;
+                mouseY = Frame.HEIGHT - mouseY;
+            }
+            return ans;
+        }
         public void draw(Graphics g) {
             applyCameraShake(g, 0.1);
             super.draw(g);
@@ -1348,10 +1356,12 @@ class Game extends JPanel {
                             pile.add(0, playerHolding);
                             playerHand.remove(playerHand.indexOf(playerHolding));
                             playerHolding = null;
+                            playSound("cardplace.wav", 0, 6);
                         } else if (gameState == ENEMYPLACE && enemyHolding != null) {
                             pile.add(0, enemyHolding);
                             enemyHand.remove(enemyHand.indexOf(enemyHolding));
                             enemyHolding = null;
+                            playSound("cardplace.wav", 0, 6);
                         }
                     }   
                 }
