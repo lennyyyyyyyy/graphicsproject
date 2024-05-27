@@ -279,10 +279,10 @@ class Game extends JPanel {
         }
     }
     public void startGame() {
-        font = new Font("font", Font.PLAIN, 25); // default font
+        font = new Font("font", Font.PLAIN, 22); // default font
         try{
             Font font1 = Font.createFont(Font.TRUETYPE_FONT, getClass().getResourceAsStream("font.ttf")); // try custom font
-            font = font1.deriveFont(Font.PLAIN, 25);
+            font = font1.deriveFont(Font.PLAIN, 22);
             GraphicsEnvironment.getLocalGraphicsEnvironment().registerFont(font);
         } catch (Exception e) {}
         for (JLabel jl : labels.values()) { // adjust label settings for every card
